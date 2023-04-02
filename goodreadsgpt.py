@@ -5,8 +5,36 @@ import datetime
 import openai
 from time import sleep
 
-open_api_key_input = st.text_input("Add OpenAI API Key here")
+directions_expander = st.expander("Directions to make this app work")
+directions_expander.write(
+    '''
+    First, you need an OpenAI API key which you can sign up for [here](https://platform.openai.com/signup?__cf_chl_rt_tk=VKUHnuTzDpc3gfI4Cy8m.HtdJ4UYoDSj3Nd1cRYRUEo-1680459300-0-gaNycGzNC9A)
+    NOTE: There is a cost to using the OpenAI API - it should be minimal (less than a penny per recommendation). You get $18 of free use over three months, then you will have to subscribe.
+    
+    Once you have the key, please paste it on the left hand menu of this app in the text box that say "Add OpenAI API Key here". Assuming they are valid, you'll see a green box  with the text "API credentials valid"
+
+    Next, [download your goodreads list](https://www.goodreads.com/review/import). It may take a few minutes to generate the download.
+
+    Once downloaded, drag and drop or browse for your file. NOTE: This app relies on you having added books to your to-read and read lists.
+
+    Then, you can select the type of book and also filter for the dates when you added books to your to-read list (this let's you force the app to only recommend certain books.)
+
+    Finally, click the "Make Recommendations!" button and the app will take a few seconds to output the name of the book and the reasons why it is being recommended.
+    '''
+)
+
+st.header(':books: Personalized :blue[Book Recommendations!] :book:')
+
+
+open_api_key_input = st.sidebar.text_input("Add OpenAI API Key here")
 openai.api_key = open_api_key_input 
+# Check if API credentials are valid
+try:
+    prompt = "Hello, World!"
+    openai.Completion.create(engine="text-davinci-002", prompt=prompt)
+    st.sidebar.success("API credentials valid")
+except:
+    st.sidebar.error("Invalid API credentials")
 
 
 with st.sidebar.form('input'):
@@ -16,10 +44,7 @@ with st.sidebar.form('input'):
     # Convert date to datetime object
     start_datetime = pd.to_datetime(start_date)        
     # Add fiction/non-fiction selection dropdown
-    fiction_nonfiction = st.sidebar.selectbox(
-        "Select Fiction or Nonfiction",
-        ('Fiction', 'Nonfiction')
-    )
+    fiction_nonfiction = st.sidebar.radio("Select a book type:", ("Fiction", "NonFiction"))
 
     genre_selection = st.sidebar.selectbox(
         "Select Genre",
@@ -64,7 +89,7 @@ with st.sidebar.form('input'):
         'Travel',
         'Young Adult',),
     )
-    submit_button = st.form_submit_button(label='Extract data')
+    submit_button = st.form_submit_button(label='Make Recommendations!')
 
 if goodreads is not None:
     try:
