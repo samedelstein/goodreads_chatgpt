@@ -5,6 +5,7 @@ import datetime
 import openai
 from time import sleep
 
+
 directions_expander = st.expander("Directions to make this app work")
 directions_expander.write(
     '''
@@ -36,19 +37,21 @@ try:
 except:
     st.sidebar.error("Invalid API credentials")
 
+goodreads = st.file_uploader("Upload Goodreads Data", type={"csv", "txt"})
+if goodreads is not None:
+        goodreads_df = pd.read_csv(goodreads)
+        goodreads_df['Date Added'] =  pd.to_datetime(goodreads_df['Date Added'], format="%Y/%m/%d")
+        min_date = pd.to_datetime(goodreads_df['Date Added'].min(), format="%Y/%m/%d")
 
-with st.sidebar.form('input'):
-    goodreads = st.sidebar.file_uploader("Upload Goodreads Data", type={"csv", "txt"})
-    # Add start date input field
-    start_date = st.sidebar.date_input('Start Date', datetime.date(2023,1,1))
-    # Convert date to datetime object
-    start_datetime = pd.to_datetime(start_date)        
-    # Add fiction/non-fiction selection dropdown
-    fiction_nonfiction = st.sidebar.radio("Select a book type:", ("Fiction", "NonFiction"))
+# Create a form
+with st.form('input'):
+    with st.sidebar:
 
-    genre_selection = st.sidebar.selectbox(
-        "Select Genre",
-        ('Art',
+        # Add fiction/non-fiction selection dropdown
+        fiction_nonfiction = st.radio("Select fiction or nonfiction:", ("Fiction", "Nonfiction"), horizontal = True)
+
+        genre_options = [
+        'Art',
         'Biography',
         'Business',
         'Chick Lit',
@@ -87,14 +90,17 @@ with st.sidebar.form('input'):
         'Sports',
         'Thriller',
         'Travel',
-        'Young Adult',),
-    )
-    submit_button = st.form_submit_button(label='Make Recommendations!')
+        'Young Adult']
+        genre_selection = st.multiselect("Select an option", genre_options)
+        # Add start date input field
+        start_date = st.date_input('Start Date', min_date)
+        # Convert date to datetime object
+        start_datetime = pd.to_datetime(start_date) 
+        st.form_submit_button(label="Make Recommendations")
+
 
 if goodreads is not None:
     try:
-        goodreads_df = pd.read_csv(goodreads)
-        goodreads_df['Date Added'] =  pd.to_datetime(goodreads_df['Date Added'], format="%Y/%m/%d")
         goodreads_date_filtered = goodreads_df[goodreads_df['Date Added'] > start_datetime]
         goodreads_read = goodreads_date_filtered[goodreads_date_filtered['Exclusive Shelf'] == 'read'].sample(40, replace=True)
         goodreads_to_read = goodreads_date_filtered[goodreads_date_filtered['Exclusive Shelf'] == 'to-read'].sample(40, replace=True)
@@ -106,29 +112,19 @@ if goodreads is not None:
     except Exception as e:
         st.error(e)
 
-    with st.spinner(text='Extracting information...'):
-        sleep(3)
-
 #Filter for books read and to-read
     books_read = ', '.join([str(title) for title in goodreads_read['Title']])
     books_to_read = ', '.join([str(title) for title in goodreads_to_read['Title']])
 # Define question string
-    question = f"Based on this list of my previously read books, please recommend a {fiction_nonfiction} {genre_selection} book from my to-read list.\n\nHere is my read list:\n{books_read}\n\nHere is my to-read list:\n{books_to_read}"
-
-# Use f-strings to dynamically construct the messages list
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant that recommends books to read based on lists"},
-        {"role": "user", "content": question},
-        {"role": "user", "content": "Please list in bullet points the recommended book and why you are recommending it."}
-    ]
+    question = f"I like to read a lot and have maintain a database of books I've read and want to read in Goodreads. Sometimes I have a hard time figuring out the next book I should be reading, but have an idea for the genre I'm interested in. Since I generally have liked books I've read in the past, I'd like to use those books as a model for the books I should read next. Based on the list of my previously read books, please recommend a {fiction_nonfiction} {genre_selection} book from my to-read list.\n\nHere is my read list:\n{books_read}\n\nHere is my to-read list:\n{books_to_read}"
 
 # Call OpenAI API
-
+     
     response = openai.ChatCompletion.create(
     model="gpt-3.5-turbo",
     messages=[
             {"role": "system", "content": "You are a helpful assistant that recommends books to read based on lists"},
-            {"role": "user", "content": '\n'.join([m['content'] for m in messages])},
+            {"role": "user", "content": question},
             {"role": "user", "content": 'Please list in bullet points the recommended book, why you are recommending it'}
 
         ]
@@ -145,3 +141,12 @@ if goodreads is not None:
     st.write(f'After Date: {start_date}')
 
     st.write(answer)
+
+
+
+
+
+        
+       # submit_button = st.form_submit_button(label='Make Recommendations!')
+       # if submit_button:
+       #     st.write("Making Recommendations!")
