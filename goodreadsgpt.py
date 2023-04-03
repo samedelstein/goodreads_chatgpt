@@ -64,7 +64,6 @@ with st.form('input'):
         'Crime',
         'Ebooks',
         'Fantasy',
-        'Fiction',
         'Gay and Lesbian',
         'Graphic Novels',
         'Historical Fiction',
@@ -75,7 +74,6 @@ with st.form('input'):
         'Memoir',
         'Music',
         'Mystery',
-        'Nonfiction',
         'Paranormal',
         'Philosophy',
         'Poetry',
@@ -91,62 +89,58 @@ with st.form('input'):
         'Thriller',
         'Travel',
         'Young Adult']
-        genre_selection = st.multiselect("Select an option", genre_options)
+        genre_selection = st.multiselect("Select a genre", genre_options)
         # Add start date input field
-        start_date = st.date_input('Start Date', min_date)
-        # Convert date to datetime object
-        start_datetime = pd.to_datetime(start_date) 
-        st.form_submit_button(label="Make Recommendations")
+        if goodreads is not None:
+            start_date = st.date_input('Start Date', min_date)
+            # Convert date to datetime object
+            start_datetime = pd.to_datetime(start_date) 
+        submit_button = st.form_submit_button(label="Make Recommendations")
 
 
 if goodreads is not None:
-    try:
-        goodreads_date_filtered = goodreads_df[goodreads_df['Date Added'] > start_datetime]
-        goodreads_read = goodreads_date_filtered[goodreads_date_filtered['Exclusive Shelf'] == 'read'].sample(40, replace=True)
-        goodreads_to_read = goodreads_date_filtered[goodreads_date_filtered['Exclusive Shelf'] == 'to-read'].sample(40, replace=True)
-        books_read_expander = st.expander("List of Books I've Read")
-        books_read_expander.write(goodreads_read[["Title", "Author", "My Rating", "Average Rating", "Date Added"]])
-        books_to_read_expander = st.expander("List of Books To Read")
-        books_to_read_expander.write(goodreads_to_read[["Title", "Author", "My Rating", "Average Rating", "Date Added"]])
-        
-    except Exception as e:
-        st.error(e)
+    if submit_button:
+        try:
+            goodreads_date_filtered = goodreads_df[goodreads_df['Date Added'] > start_datetime]
+            goodreads_read = goodreads_date_filtered[goodreads_date_filtered['Exclusive Shelf'] == 'read'].sample(40, replace=True)
+            goodreads_to_read = goodreads_date_filtered[goodreads_date_filtered['Exclusive Shelf'] == 'to-read'].sample(40, replace=True)
+            books_read_expander = st.expander("List of Books I've Read")
+            books_read_expander.write(goodreads_read[["Title", "Author", "My Rating", "Average Rating", "Date Added"]])
+            books_to_read_expander = st.expander("List of Books To Read")
+            books_to_read_expander.write(goodreads_to_read[["Title", "Author", "My Rating", "Average Rating", "Date Added"]])
 
-#Filter for books read and to-read
-    books_read = ', '.join([str(title) for title in goodreads_read['Title']])
-    books_to_read = ', '.join([str(title) for title in goodreads_to_read['Title']])
-# Define question string
-    question = f"I like to read a lot and have maintain a database of books I've read and want to read in Goodreads. Sometimes I have a hard time figuring out the next book I should be reading, but have an idea for the genre I'm interested in. Since I generally have liked books I've read in the past, I'd like to use those books as a model for the books I should read next. Based on the list of my previously read books, please recommend a {fiction_nonfiction} {genre_selection} book from my to-read list.\n\nHere is my read list:\n{books_read}\n\nHere is my to-read list:\n{books_to_read}"
+        #Filter for books read and to-read
+            books_read = ', '.join([str(title) for title in goodreads_read['Title']])
+            books_to_read = ', '.join([str(title) for title in goodreads_to_read['Title']])
+        # Define question string
+            question = f"I like to read a lot and have maintain a database of books I've read and want to read in Goodreads. Sometimes I have a hard time figuring out the next book I should be reading, but have an idea for the genre I'm interested in. Since I generally have liked books I've read in the past, I'd like to use those books as a model for the books I should read next. Based on the list of my previously read books, please recommend a {fiction_nonfiction} {genre_selection} book from my to-read list.\n\nHere is my read list:\n{books_read}\n\nHere is my to-read list:\n{books_to_read}"
 
-# Call OpenAI API
-     
-    response = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[
-            {"role": "system", "content": "You are a helpful assistant that recommends books to read based on lists"},
-            {"role": "user", "content": question},
-            {"role": "user", "content": 'Please list in bullet points the recommended book, why you are recommending it'}
+        # Call OpenAI API
+            
+            response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                    {"role": "system", "content": "You are a helpful assistant that recommends books to read based on lists"},
+                    {"role": "user", "content": question},
+                    {"role": "user", "content": 'Please list in bullet points the recommended book, why you are recommending it'}
 
-        ]
-    )
+                ]
+            )
 
-    # Extract answer from response
-    answer = response["choices"][0]["message"]["content"]
+            # Extract answer from response
+            answer = response["choices"][0]["message"]["content"]
 
 
 # Main section content
-    st.header('My Recommendation')
-    st.write(f'Fiction/Nonfiction: {fiction_nonfiction}')
-    st.write(f'Genre Selected: {genre_selection}')
-    st.write(f'After Date: {start_date}')
+            st.header('My Recommendation')
+            st.write(f'Fiction/Nonfiction: {fiction_nonfiction}')
+            st.write(f'Genre Selected: {genre_selection}')
+            st.write(f'After Date: {start_date}')
 
-    st.write(answer)
+            st.write(answer)
+        except Exception as e:
+            st.error(e)
 
 
 
 
-
-        
-       # submit_button = st.form_submit_button(label='Make Recommendations!')
-       # if submit_button:
-       #     st.write("Making Recommendations!")
