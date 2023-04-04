@@ -113,7 +113,8 @@ if goodreads is not None:
             books_read = ', '.join([str(title) for title in goodreads_read['Title']])
             books_to_read = ', '.join([str(title) for title in goodreads_to_read['Title']])
         # Define question string
-            question = f"I like to read a lot and have maintain a database of books I've read and want to read in Goodreads. Sometimes I have a hard time figuring out the next book I should be reading, but have an idea for the genre I'm interested in. Since I generally have liked books I've read in the past, I'd like to use those books as a model for the books I should read next. Based on the list of my previously read books, please recommend a {fiction_nonfiction} {genre_selection} book from my to-read list.\n\nHere is my read list:\n{books_read}\n\nHere is my to-read list:\n{books_to_read}"
+            #first_question = f"Please look at all of the books that I have previously read here: \n{books_read}"
+            question = f"I like to read a lot and have maintain a database of books I've read and want to read in Goodreads. Sometimes I have a hard time figuring out the next book I should be reading, but have an idea for the genre I'm interested in. Since I generally have liked books I've read in the past, I'd like to use those books as a model for the books I should read next. Please use my \n{books_read} list and recommend a {fiction_nonfiction} {genre_selection} book from this to-read list \n{books_to_read}. You should not choose any books except for the ones from my to-read list here: {books_to_read} and it should be a  {fiction_nonfiction} book from the {genre_selection} genre. If you don't have any recommendations, please say 'I don't know'"
 
         # Call OpenAI API
             
@@ -121,10 +122,17 @@ if goodreads is not None:
             model="gpt-3.5-turbo",
             messages=[
                     {"role": "system", "content": "You are a helpful assistant that recommends books to read based on lists"},
+                    {"role": "user", "content": "Please look at all of the books that I have previously read here: \n{books_read}"},
+                    {"role": "assistant", "content": "I see all of the books that you have read here: \n{books_read} and will use them to base my recommendation off of for you when you ask. "},
+                    {"role": "user", "content": "Now, please look at all of the books that I would like to read in the future here: \n{books_to_read}. "},
+                    {"role": "assistant", "content": "I see all of the books you want to read here: \n{books_to_read} and will choose from one of them to make my recommendation when you ask for it. I will also use your selections of a {fiction_nonfiction} book in the {genre_selection} genre when I make the recommendation."},
                     {"role": "user", "content": question},
-                    {"role": "user", "content": 'Please list in bullet points the recommended book, why you are recommending it'}
-
-                ]
+                    {"role": "user", "content": 'Please describe using 3 bullet points, one sentence each, why you are recommending this book. You should not make up details about the book that are not true.'},
+                    {"role": "assistant", "content": 'I will make your recommendations!'},
+                    {"role": "user", "content": 'Please make sure this is a {fiction_nonfiction} book in the {genre_selection} genre before making the recommendation.'},
+                ],
+            temperature=0.4,
+            #stream = True,
             )
 
             # Extract answer from response
@@ -136,7 +144,8 @@ if goodreads is not None:
                     {"role": "system", "content": "You are the world's most creative short story writer who takes prompts and write one-paragraph engaging stories"},
                     {"role": "user", "content": 'Based on the information from ' + answer + ' please write a short story for us.'},
 
-                ]
+                ],
+            temperature=1.2,
             )
             story_answer = story_response["choices"][0]["message"]["content"]
             story_expander = st.expander("Read a brand new short story customized for you based on the book recommendation")
