@@ -130,14 +130,28 @@ if goodreads is not None:
             # Extract answer from response
             answer = response["choices"][0]["message"]["content"]
 
+            story_response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                    {"role": "system", "content": "You are the world's most creative short story writer who takes prompts and write one-paragraph engaging stories"},
+                    {"role": "user", "content": 'Based on the information from ' + answer + ' please write a short story for us.'},
+
+                ]
+            )
+            story_answer = story_response["choices"][0]["message"]["content"]
+            story_expander = st.expander("Read a brand new short story customized for you based on the book recommendation")
+            story_expander.write(story_answer)
+
 
 # Main section content
+
             st.header('My Recommendation')
             st.write(f'Fiction/Nonfiction: {fiction_nonfiction}')
             st.write(f'Genre Selected: {genre_selection}')
             st.write(f'After Date: {start_date}')
 
             st.write(answer)
+
         except Exception as e:
             st.error(e)
 
