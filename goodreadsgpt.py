@@ -129,7 +129,7 @@ if goodreads is not None:
                     {"role": "user", "content": question},
                     {"role": "user", "content": 'Please describe using 3 bullet points, one sentence each, why you are recommending this book. You should not make up details about the book that are not true.'},
                     {"role": "assistant", "content": 'I will make your recommendations!'},
-                    {"role": "user", "content": 'Please make sure this is a {fiction_nonfiction} book in the {genre_selection} genre before making the recommendation.'},
+                    {"role": "user", "content": 'Please make sure this is a {fiction_nonfiction} book in the {genre_selection} genre before making the recommendation. When you make the recommendation, never apologize.'},
                 ],
             temperature=0.4,
             #stream = True,
